@@ -1,0 +1,772 @@
+{
+  "builds": [
+    {
+      "id": "build.46",
+      "kbId": "kb.northwind-policies",
+      "buildNumber": 46,
+      "builtAt": "2026-09-12T09:14:00Z",
+      "outlineHash": "sha256:9f2c41ab7e05d3c8",
+      "claims": [
+        {
+          "id": "claim.returns-window",
+          "path": "support/returns",
+          "statement": "Returns are accepted within 30 days of delivery.",
+          "value": 30,
+          "unit": "days",
+          "tier": "core",
+          "citations": [
+            "source.returns-policy-v4",
+            "source.help-centre-returns"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46"
+        },
+        {
+          "id": "claim.returns-eu",
+          "path": "support/returns-eu",
+          "statement": "EU customers have a 14 day cooling-off period in addition to the standard window.",
+          "value": 14,
+          "unit": "days",
+          "tier": "core",
+          "citations": [
+            "source.eu-distance-selling"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46"
+        },
+        {
+          "id": "claim.restocking-fee",
+          "path": "support/restocking-fee",
+          "statement": "Opened items are subject to a 15% restocking fee.",
+          "value": 15,
+          "unit": "percent",
+          "tier": "standard",
+          "citations": [
+            "source.returns-policy-v4"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46"
+        },
+        {
+          "id": "claim.warranty",
+          "path": "support/warranty",
+          "statement": "All products carry a 24 month limited warranty.",
+          "value": 24,
+          "unit": "months",
+          "tier": "core",
+          "citations": [
+            "source.warranty-terms"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46"
+        },
+        {
+          "id": "claim.free-shipping",
+          "path": "shipping/free-threshold",
+          "statement": "Orders over 75 USD ship free within the contiguous US.",
+          "value": 75,
+          "unit": "USD",
+          "tier": "standard",
+          "citations": [
+            "source.shipping-policy"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46"
+        },
+        {
+          "id": "claim.dispatch",
+          "path": "shipping/dispatch-time",
+          "statement": "Orders are dispatched within 2 business days.",
+          "value": 2,
+          "unit": "days",
+          "tier": "standard",
+          "citations": [
+            "source.shipping-policy"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46"
+        },
+        {
+          "id": "claim.brand-tone",
+          "path": "brand/tone",
+          "statement": "Write warmly and enthusiastically. Exclamation marks are welcome.",
+          "tier": "peripheral",
+          "citations": [
+            "source.brand-voice-guide"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46"
+        }
+      ],
+      "conflicts": null,
+      "instructionsActive": null,
+      "instructionsArchived": null
+    },
+    {
+      "id": "build.47",
+      "kbId": "kb.northwind-policies",
+      "buildNumber": 47,
+      "builtAt": "2026-09-19T11:02:00Z",
+      "outlineHash": "sha256:3d81e6f0ac94b527",
+      "claims": [
+        {
+          "id": "claim.returns-window",
+          "path": "support/returns",
+          "statement": "Returns are accepted within 45 days of delivery.",
+          "value": 45,
+          "unit": "days",
+          "tier": "core",
+          "citations": [
+            "source.returns-policy-v4",
+            "source.help-centre-returns"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46",
+          "lastChangedBuild": "build.47"
+        },
+        {
+          "id": "claim.returns-eu",
+          "path": "support/returns-eu",
+          "statement": "EU customers have a 14 day cooling-off period in addition to the standard window.",
+          "value": 14,
+          "unit": "days",
+          "tier": "core",
+          "citations": [
+            "source.eu-distance-selling"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.47"
+        },
+        {
+          "id": "claim.warranty",
+          "path": "support/warranty",
+          "statement": "All products carry a 24 month limited warranty.",
+          "value": 24,
+          "unit": "months",
+          "tier": "core",
+          "citations": [
+            "source.warranty-terms"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.47"
+        },
+        {
+          "id": "claim.free-shipping",
+          "path": "shipping/free-threshold",
+          "statement": "Orders over 75 USD ship free within the contiguous US.",
+          "value": 75,
+          "unit": "USD",
+          "tier": "standard",
+          "citations": [
+            "source.shipping-policy"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.47"
+        },
+        {
+          "id": "claim.dispatch",
+          "path": "shipping/dispatch-time",
+          "statement": "We dispatch orders within 2 business days of purchase.",
+          "value": 2,
+          "unit": "days",
+          "tier": "standard",
+          "citations": [
+            "source.shipping-policy"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.47"
+        },
+        {
+          "id": "claim.brand-tone",
+          "path": "brand/tone",
+          "statement": "Write plainly and directly. Avoid exclamation marks.",
+          "tier": "peripheral",
+          "citations": [
+            "source.brand-voice-guide"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.46",
+          "lastVerifiedBuild": "build.46",
+          "lastChangedBuild": "build.47"
+        },
+        {
+          "id": "claim.price-match",
+          "path": "support/price-match",
+          "statement": "We match any advertised price from an authorised reseller within 14 days of purchase.",
+          "value": 14,
+          "unit": "days",
+          "tier": "standard",
+          "citations": [
+            "source.returns-policy-v4"
+          ],
+          "status": "active",
+          "firstSeenBuild": "build.47",
+          "lastVerifiedBuild": "build.47"
+        }
+      ],
+      "conflicts": [
+        {
+          "path": "support/returns",
+          "competingValues": [
+            {
+              "statement": "Returns are accepted within 45 days of delivery.",
+              "value": 45,
+              "unit": "days",
+              "sourceId": "source.returns-policy-v4",
+              "authority": 5
+            },
+            {
+              "statement": "You have 30 days from delivery to start a return.",
+              "value": 30,
+              "unit": "days",
+              "sourceId": "source.help-centre-returns",
+              "authority": 2
+            }
+          ]
+        }
+      ],
+      "instructionsActive": null,
+      "instructionsArchived": null
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim.returns-window",
+      "path": "support/returns",
+      "statement": "Returns are accepted within 45 days of delivery.",
+      "value": 45,
+      "unit": "days",
+      "tier": "core",
+      "citations": [
+        "source.returns-policy-v4",
+        "source.help-centre-returns"
+      ],
+      "status": "active",
+      "firstSeenBuild": "build.46",
+      "lastVerifiedBuild": "build.46",
+      "lastChangedBuild": "build.47"
+    },
+    {
+      "id": "claim.returns-eu",
+      "path": "support/returns-eu",
+      "statement": "EU customers have a 14 day cooling-off period in addition to the standard window.",
+      "value": 14,
+      "unit": "days",
+      "tier": "core",
+      "citations": [
+        "source.eu-distance-selling"
+      ],
+      "status": "active",
+      "firstSeenBuild": "build.46",
+      "lastVerifiedBuild": "build.47"
+    },
+    {
+      "id": "claim.warranty",
+      "path": "support/warranty",
+      "statement": "All products carry a 24 month limited warranty.",
+      "value": 24,
+      "unit": "months",
+      "tier": "core",
+      "citations": [
+        "source.warranty-terms"
+      ],
+      "status": "active",
+      "firstSeenBuild": "build.46",
+      "lastVerifiedBuild": "build.47"
+    },
+    {
+      "id": "claim.free-shipping",
+      "path": "shipping/free-threshold",
+      "statement": "Orders over 75 USD ship free within the contiguous US.",
+      "value": 75,
+      "unit": "USD",
+      "tier": "standard",
+      "citations": [
+        "source.shipping-policy"
+      ],
+      "status": "active",
+      "firstSeenBuild": "build.46",
+      "lastVerifiedBuild": "build.47"
+    },
+    {
+      "id": "claim.dispatch",
+      "path": "shipping/dispatch-time",
+      "statement": "We dispatch orders within 2 business days of purchase.",
+      "value": 2,
+      "unit": "days",
+      "tier": "standard",
+      "citations": [
+        "source.shipping-policy"
+      ],
+      "status": "active",
+      "firstSeenBuild": "build.46",
+      "lastVerifiedBuild": "build.47"
+    },
+    {
+      "id": "claim.brand-tone",
+      "path": "brand/tone",
+      "statement": "Write plainly and directly. Avoid exclamation marks.",
+      "tier": "peripheral",
+      "citations": [
+        "source.brand-voice-guide"
+      ],
+      "status": "active",
+      "firstSeenBuild": "build.46",
+      "lastVerifiedBuild": "build.46",
+      "lastChangedBuild": "build.47"
+    },
+    {
+      "id": "claim.price-match",
+      "path": "support/price-match",
+      "statement": "We match any advertised price from an authorised reseller within 14 days of purchase.",
+      "value": 14,
+      "unit": "days",
+      "tier": "standard",
+      "citations": [
+        "source.returns-policy-v4"
+      ],
+      "status": "active",
+      "firstSeenBuild": "build.47",
+      "lastVerifiedBuild": "build.47"
+    },
+    {
+      "id": "claim.restocking-fee",
+      "path": "support/restocking-fee",
+      "statement": "Opened items are subject to a 15% restocking fee.",
+      "value": 15,
+      "unit": "percent",
+      "tier": "standard",
+      "citations": [
+        "source.returns-policy-v4"
+      ],
+      "status": "retired",
+      "firstSeenBuild": "build.46",
+      "lastVerifiedBuild": "build.46"
+    }
+  ],
+  "pages": [
+    {
+      "id": "page.returns",
+      "title": "Returns \u0026 Refunds",
+      "slug": "returns",
+      "summary": "How to return a Northwind Audio product.",
+      "body": [
+        "Changed your mind? No problem.",
+        "You have 30 days from delivery to start a return.",
+        "Opened items are subject to a 15% restocking fee.",
+        "Refunds are issued to the original payment method."
+      ],
+      "owner": "support@northwind.example"
+    },
+    {
+      "id": "page.faq",
+      "title": "Frequently Asked Questions",
+      "slug": "faq",
+      "summary": "Answers to the questions we get most often.",
+      "body": [
+        "How long do I have to return something?",
+        "Our return window is 30 days from the date your order is delivered.",
+        "Do you ship internationally?",
+        "Yes, to 34 countries."
+      ],
+      "owner": "support@northwind.example"
+    },
+    {
+      "id": "page.aurora",
+      "title": "Aurora Wireless Headphones",
+      "slug": "products/aurora",
+      "summary": "Reference-grade wireless headphones.",
+      "body": [
+        "Forty hours of playback. Adaptive noise cancellation.",
+        "Free shipping on orders over 75 USD, and a 30 day return window if they are not for you.",
+        "Covered by our 24 month limited warranty."
+      ],
+      "owner": "marketing@northwind.example"
+    },
+    {
+      "id": "page.tide",
+      "title": "Tide Portable Speaker",
+      "slug": "products/tide",
+      "summary": "A speaker that survives the beach.",
+      "body": [
+        "IP67 rated. Twelve hour battery.",
+        "Try it for 30 days. If it is not for you, send it back."
+      ],
+      "owner": "marketing@northwind.example"
+    },
+    {
+      "id": "page.checkout-terms",
+      "title": "Checkout Terms",
+      "slug": "checkout-terms",
+      "summary": "The terms you accept when you place an order.",
+      "body": [
+        "By completing this order you agree to the following terms.",
+        "Returns may be initiated within 30 days of delivery.",
+        "EU customers additionally have a 14 day cooling-off period."
+      ],
+      "owner": "legal@northwind.example"
+    },
+    {
+      "id": "page.contact",
+      "title": "Contact Support",
+      "slug": "support/contact",
+      "summary": "How to reach a human.",
+      "body": [
+        "Our support team replies within one business day.",
+        "Before you write in: most return questions are answered by our 30 day policy page."
+      ],
+      "owner": "support@northwind.example"
+    },
+    {
+      "id": "page.holiday-guide",
+      "title": "Holiday Shopping Guide",
+      "slug": "blog/holiday-guide",
+      "summary": "What to buy, and how long you have to change your mind.",
+      "body": [
+        "Shopping early this year? Here is what to know.",
+        "Every order is covered by a 30 day return window, so you can buy with confidence.",
+        "Orders over 75 USD ship free."
+      ],
+      "owner": "marketing@northwind.example"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "assert.returns-1",
+      "claimId": "claim.returns-window",
+      "pageId": "page.returns",
+      "fieldPath": "body[1]",
+      "blockKey": "b01",
+      "renderedText": "You have 30 days from delivery to start a return.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.returns-2",
+      "claimId": "claim.returns-window",
+      "pageId": "page.faq",
+      "fieldPath": "body[1]",
+      "blockKey": "b01",
+      "renderedText": "Our return window is 30 days from the date your order is delivered.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.returns-3",
+      "claimId": "claim.returns-window",
+      "pageId": "page.aurora",
+      "fieldPath": "body[1]",
+      "blockKey": "b01",
+      "renderedText": "Free shipping on orders over 75 USD, and a 30 day return window if they are not for you.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.returns-4",
+      "claimId": "claim.returns-window",
+      "pageId": "page.tide",
+      "fieldPath": "body[1]",
+      "blockKey": "b01",
+      "renderedText": "Try it for 30 days. If it is not for you, send it back.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.returns-5",
+      "claimId": "claim.returns-window",
+      "pageId": "page.checkout-terms",
+      "fieldPath": "body[1]",
+      "blockKey": "b01",
+      "renderedText": "Returns may be initiated within 30 days of delivery.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.returns-6",
+      "claimId": "claim.returns-window",
+      "pageId": "page.contact",
+      "fieldPath": "body[1]",
+      "blockKey": "b01",
+      "renderedText": "Before you write in: most return questions are answered by our 30 day policy page.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.returns-7",
+      "claimId": "claim.returns-window",
+      "pageId": "page.holiday-guide",
+      "fieldPath": "body[1]",
+      "blockKey": "b01",
+      "renderedText": "Every order is covered by a 30 day return window, so you can buy with confidence.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.restocking-1",
+      "claimId": "claim.restocking-fee",
+      "pageId": "page.returns",
+      "fieldPath": "body[2]",
+      "blockKey": "b02",
+      "renderedText": "Opened items are subject to a 15% restocking fee.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.warranty-1",
+      "claimId": "claim.warranty",
+      "pageId": "page.aurora",
+      "fieldPath": "body[2]",
+      "blockKey": "b02",
+      "renderedText": "Covered by our 24 month limited warranty.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.shipping-1",
+      "claimId": "claim.free-shipping",
+      "pageId": "page.holiday-guide",
+      "fieldPath": "body[2]",
+      "blockKey": "b02",
+      "renderedText": "Orders over 75 USD ship free.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.shipping-2",
+      "claimId": "claim.free-shipping",
+      "pageId": "page.aurora",
+      "fieldPath": "body[1]",
+      "blockKey": "b01",
+      "renderedText": "Free shipping on orders over 75 USD, and a 30 day return window if they are not for you.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "assert.eu-1",
+      "claimId": "claim.returns-eu",
+      "pageId": "page.checkout-terms",
+      "fieldPath": "body[2]",
+      "blockKey": "b02",
+      "renderedText": "EU customers additionally have a 14 day cooling-off period.",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "dep.support-bot.returns",
+      "claimId": "claim.returns-window",
+      "surfaceId": "surface.support-bot",
+      "fieldPath": "answer",
+      "renderedText": "How long do I have to return something?",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    },
+    {
+      "id": "dep.support-bot.warranty",
+      "claimId": "claim.warranty",
+      "surfaceId": "surface.support-bot",
+      "fieldPath": "answer",
+      "renderedText": "Is there a warranty on the Aurora headphones?",
+      "verifiedAgainstBuild": "build.46",
+      "state": "verified"
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "page.returns",
+      "kind": "page",
+      "title": "Returns \u0026 Refunds",
+      "owner": "support@northwind.example",
+      "locator": "/returns"
+    },
+    {
+      "id": "page.faq",
+      "kind": "page",
+      "title": "Frequently Asked Questions",
+      "owner": "support@northwind.example",
+      "locator": "/faq"
+    },
+    {
+      "id": "page.aurora",
+      "kind": "page",
+      "title": "Aurora Wireless Headphones",
+      "owner": "marketing@northwind.example",
+      "locator": "/products/aurora"
+    },
+    {
+      "id": "page.tide",
+      "kind": "page",
+      "title": "Tide Portable Speaker",
+      "owner": "marketing@northwind.example",
+      "locator": "/products/tide"
+    },
+    {
+      "id": "page.checkout-terms",
+      "kind": "page",
+      "title": "Checkout Terms",
+      "owner": "legal@northwind.example",
+      "locator": "/checkout-terms"
+    },
+    {
+      "id": "page.contact",
+      "kind": "page",
+      "title": "Contact Support",
+      "owner": "support@northwind.example",
+      "locator": "/support/contact"
+    },
+    {
+      "id": "page.holiday-guide",
+      "kind": "page",
+      "title": "Holiday Shopping Guide",
+      "owner": "marketing@northwind.example",
+      "locator": "/blog/holiday-guide"
+    },
+    {
+      "id": "surface.support-bot",
+      "kind": "agent",
+      "title": "Support Bot",
+      "owner": "support@northwind.example",
+      "locator": "dissent://northwind/support"
+    }
+  ],
+  "sources": [
+    {
+      "id": "source.returns-policy-v4",
+      "title": "Returns \u0026 Refunds Policy v4",
+      "kind": "policy",
+      "uri": "https://northwind.example/legal/returns-v4.pdf",
+      "owner": "legal@northwind.example",
+      "authority": 5,
+      "changedAt": "2026-09-19T10:47:00Z"
+    },
+    {
+      "id": "source.help-centre-returns",
+      "title": "Help Centre — Returns",
+      "kind": "page",
+      "uri": "https://northwind.example/help/returns",
+      "owner": "support@northwind.example",
+      "authority": 2,
+      "changedAt": "2026-03-02T14:00:00Z"
+    },
+    {
+      "id": "source.warranty-terms",
+      "title": "Limited Warranty Terms",
+      "kind": "contract",
+      "uri": "https://northwind.example/legal/warranty.pdf",
+      "owner": "legal@northwind.example",
+      "authority": 5,
+      "changedAt": "2025-11-04T09:00:00Z"
+    },
+    {
+      "id": "source.shipping-policy",
+      "title": "Shipping \u0026 Dispatch Policy",
+      "kind": "policy",
+      "uri": "https://northwind.example/legal/shipping.pdf",
+      "owner": "ops@northwind.example",
+      "authority": 4,
+      "changedAt": "2026-06-21T08:30:00Z"
+    },
+    {
+      "id": "source.eu-distance-selling",
+      "title": "EU Distance Selling Addendum",
+      "kind": "contract",
+      "uri": "https://northwind.example/legal/eu-addendum.pdf",
+      "owner": "legal@northwind.example",
+      "authority": 5,
+      "changedAt": "2025-08-14T09:00:00Z"
+    },
+    {
+      "id": "source.brand-voice-guide",
+      "title": "Brand Voice Guide",
+      "kind": "spec",
+      "uri": "https://northwind.example/brand/voice",
+      "owner": "marketing@northwind.example",
+      "authority": 3,
+      "changedAt": "2026-09-18T16:05:00Z"
+    }
+  ],
+  "events": [
+    {
+      "fromBuild": "build.46",
+      "toBuild": "build.47",
+      "claimPath": "brand/tone",
+      "claimId": "claim.brand-tone",
+      "kind": "contradicted",
+      "before": "Write warmly and enthusiastically. Exclamation marks are welcome.",
+      "after": "Write plainly and directly. Avoid exclamation marks.",
+      "confidence": 0.55,
+      "detectedBy": "semantic",
+      "tier": "peripheral",
+      "blastRadius": [],
+      "workflowState": "dismissed"
+    },
+    {
+      "fromBuild": "build.46",
+      "toBuild": "build.47",
+      "claimPath": "support/price-match",
+      "claimId": "claim.price-match",
+      "kind": "added",
+      "after": "We match any advertised price from an authorised reseller within 14 days of purchase.",
+      "confidence": 1,
+      "detectedBy": "outline_presence",
+      "tier": "standard",
+      "blastRadius": [],
+      "workflowState": "dismissed"
+    },
+    {
+      "fromBuild": "build.46",
+      "toBuild": "build.47",
+      "claimPath": "support/restocking-fee",
+      "claimId": "claim.restocking-fee",
+      "kind": "retired",
+      "before": "Opened items are subject to a 15% restocking fee.",
+      "confidence": 1,
+      "detectedBy": "outline_presence",
+      "tier": "standard",
+      "blastRadius": [
+        "assert.restocking-1"
+      ],
+      "workflowState": "drafting"
+    },
+    {
+      "fromBuild": "build.46",
+      "toBuild": "build.47",
+      "claimPath": "support/returns",
+      "claimId": "claim.returns-window",
+      "kind": "contradicted",
+      "before": "Returns are accepted within 30 days of delivery.",
+      "after": "Returns are accepted within 45 days of delivery.",
+      "confidence": 1,
+      "detectedBy": "typed_value",
+      "tier": "core",
+      "blastRadius": [
+        "assert.returns-1",
+        "assert.returns-2",
+        "assert.returns-3",
+        "assert.returns-4",
+        "assert.returns-5",
+        "assert.returns-6",
+        "assert.returns-7",
+        "dep.support-bot.returns"
+      ],
+      "workflowState": "triage"
+    }
+  ],
+  "summary": {
+    "totalEvents": 4,
+    "needingReview": 1,
+    "affectedDependents": 9,
+    "unresolvedConflicts": 1
+  }
+}

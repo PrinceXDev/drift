@@ -1,0 +1,25 @@
+{
+  "name": "@drift/studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "sanity dev --port 3334",
+    "build": "sanity build",
+    "deploy": "sanity deploy",
+    "schema:deploy": "sanity schema deploy",
+    "seed": "sanity dataset import ../../sanity/seed/northwind.ndjson --dataset production --replace",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@drift/schema": "workspace:*",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "sanity": "6.15.0",
+    "styled-components": "6.1.19"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

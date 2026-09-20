@@ -1,0 +1,385 @@
+/*
+ * Dissent.
+ *
+ * Quieter than the DRIFT console on purpose. The console is an operations
+ * surface for someone monitoring content integrity all day; this is a single
+ * question and a single, consequential answer. The layout gives the
+ * disagreement room, because the disagreement is the product.
+ *
+ * Every state carries a text badge as well as a colour — "No answer",
+ * "Sources agree", "Settled" — so the screen reads correctly in greyscale, to a
+ * colour-blind visitor, and after video compression.
+ */
+
+:root {
+  --bg: #fcfcfb;
+  --panel: #ffffff;
+  --rule: #e5e4e1;
+  --rule-strong: #c9c7c2;
+
+  --ink: #17181a;
+  --ink-dim: #5c5e63;
+  --ink-faint: #8d8f95;
+
+  --refuse: #a8213a;
+  --refuse-bg: #fdf1f3;
+  --agree: #17694a;
+  --agree-bg: #eef6f2;
+  --accent: #2b4c7e;
+
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  --serif: ui-serif, Georgia, "Times New Roman", serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0f1113;
+    --panel: #16191c;
+    --rule: #262a2e;
+    --rule-strong: #3a3f45;
+    --ink: #e9eaec;
+    --ink-dim: #a2a6ad;
+    --ink-faint: #71767d;
+    --refuse: #f2647c;
+    --refuse-bg: #2c161c;
+    --agree: #46cf95;
+    --agree-bg: #13291f;
+    --accent: #7aa6e8;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px 16px 80px;
+}
+
+header h1 {
+  font-family: var(--serif);
+  font-size: 34px;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.strap {
+  color: var(--ink-dim);
+  margin: 4px 0 28px;
+  font-size: 16px;
+}
+
+/* ---------- ask ---------- */
+
+form {
+  display: flex;
+  gap: 8px;
+}
+
+input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 11px 14px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+input[type='text']:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+button {
+  font: inherit;
+  font-weight: 500;
+  padding: 11px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Only the short "Ask" label is kept on one line. The resolve button's label is
+   a full sentence and must wrap, or it forces horizontal page scroll on a
+   phone — which it did. */
+form button[type='submit'] {
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+button.link {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  padding: 2px 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- empty state ---------- */
+
+.samples {
+  margin-top: 28px;
+}
+
+.hint {
+  color: var(--ink-dim);
+  margin: 0 0 12px;
+}
+
+.samples ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ---------- verdict ---------- */
+
+.verdict {
+  margin-top: 28px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 20px;
+}
+
+.verdict.refused {
+  border-color: var(--refuse);
+}
+
+.verdict.answered,
+.verdict.settled {
+  border-color: var(--agree);
+}
+
+.verdict-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.badge {
+  display: inline-block;
+  border: 1px solid var(--rule-strong);
+  border-radius: 100px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+}
+
+.badge.refused {
+  color: var(--refuse);
+  background: var(--refuse-bg);
+  border-color: var(--refuse);
+}
+
+.badge.ok {
+  color: var(--agree);
+  background: var(--agree-bg);
+  border-color: var(--agree);
+}
+
+.badge.core {
+  color: var(--refuse);
+  border-color: var(--refuse);
+}
+
+.path {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink-dim);
+}
+
+.reason {
+  margin: 0 0 16px;
+  color: var(--ink);
+}
+
+/* ---------- the disagreement ---------- */
+
+.sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.side {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 14px;
+  background: var(--bg);
+}
+
+.side.favoured {
+  border-color: var(--agree);
+}
+
+.side-value {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.side blockquote {
+  margin: 6px 0;
+  color: var(--ink-dim);
+  font-size: 14px;
+}
+
+.side-source {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.authority {
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* ---------- resolve ---------- */
+
+.resolve {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.resolve-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.instruction {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--bg);
+  border-left: 2px solid var(--accent);
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  border-radius: 0 4px 4px 0;
+}
+
+.note {
+  color: var(--ink-faint);
+  font-size: 13px;
+  margin: 10px 0 0;
+}
+
+/* ---------- answer ---------- */
+
+.claim {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.claim:last-of-type {
+  border-bottom: 0;
+}
+
+.statement {
+  margin: 0;
+  font-size: 16px;
+}
+
+.typed {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+}
+
+.citations {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+.citations ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-dim);
+}
+
+.citations li::before {
+  content: '↳ ';
+  color: var(--ink-faint);
+}
+
+/* ---------- footer ---------- */
+
+footer {
+  margin-top: 24px;
+}
+
+.stamp {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+}
+
+@media (max-width: 560px) {
+  .page {
+    padding-top: 32px;
+  }
+
+  form {
+    flex-direction: column;
+  }
+
+  header h1 {
+    font-size: 28px;
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // `.ts` specifiers, because the runner is executed by Node's type stripper
+    // rather than compiled — there is no build step to rewrite extensions.
+    "allowImportingTsExtensions": true,
+    // The base turns declarations on for publishable packages. This one is a
+    // script, and with declarations on TypeScript reports TS4023 for
+    // `driftRemediation`: the inferred type names several types the workflow
+    // engine does not export. Nothing consumes a `.d.ts` from here.
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "../../sanity/workflows/**/*.ts"]
+}

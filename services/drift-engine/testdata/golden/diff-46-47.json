@@ -1,0 +1,67 @@
+[
+  {
+    "fromBuild": "build.46",
+    "toBuild": "build.47",
+    "claimPath": "brand/tone",
+    "claimId": "claim.brand-tone",
+    "kind": "contradicted",
+    "before": "Write warmly and enthusiastically. Exclamation marks are welcome.",
+    "after": "Write plainly and directly. Avoid exclamation marks.",
+    "confidence": 0.55,
+    "detectedBy": "semantic",
+    "tier": "peripheral",
+    "blastRadius": [],
+    "workflowState": "dismissed"
+  },
+  {
+    "fromBuild": "build.46",
+    "toBuild": "build.47",
+    "claimPath": "support/price-match",
+    "claimId": "claim.price-match",
+    "kind": "added",
+    "after": "We match any advertised price from an authorised reseller within 14 days of purchase.",
+    "confidence": 1,
+    "detectedBy": "outline_presence",
+    "tier": "standard",
+    "blastRadius": [],
+    "workflowState": "dismissed"
+  },
+  {
+    "fromBuild": "build.46",
+    "toBuild": "build.47",
+    "claimPath": "support/restocking-fee",
+    "claimId": "claim.restocking-fee",
+    "kind": "retired",
+    "before": "Opened items are subject to a 15% restocking fee.",
+    "confidence": 1,
+    "detectedBy": "outline_presence",
+    "tier": "standard",
+    "blastRadius": [
+      "assert.restocking-1"
+    ],
+    "workflowState": "drafting"
+  },
+  {
+    "fromBuild": "build.46",
+    "toBuild": "build.47",
+    "claimPath": "support/returns",
+    "claimId": "claim.returns-window",
+    "kind": "contradicted",
+    "before": "Returns are accepted within 30 days of delivery.",
+    "after": "Returns are accepted within 45 days of delivery.",
+    "confidence": 1,
+    "detectedBy": "typed_value",
+    "tier": "core",
+    "blastRadius": [
+      "assert.returns-1",
+      "assert.returns-2",
+      "assert.returns-3",
+      "assert.returns-4",
+      "assert.returns-5",
+      "assert.returns-6",
+      "assert.returns-7",
+      "dep.support-bot.returns"
+    ],
+    "workflowState": "triage"
+  }
+]
