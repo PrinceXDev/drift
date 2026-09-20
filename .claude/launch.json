@@ -7,6 +7,12 @@
       "runtimeArgs": ["vite", "--port", "3333", "--strictPort"],
       "cwd": "apps/console",
       "port": 3333
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@drift/site", "dev"],
+      "port": 3100
     }
   ]
 }

@@ -1,0 +1,64 @@
+{
+  "hash": "c1b9f1d0",
+  "configHash": "d2e02cb5",
+  "lockfileHash": "07d3e679",
+  "browserHash": "349e9887",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../../../node_modules/.pnpm/react@19.3.0/node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "14e25f53",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../../../node_modules/.pnpm/react@19.3.0/node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "006d32d3",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "820888b6",
+      "needsInterop": true
+    },
+    "@sanity/sdk-react": {
+      "src": "../../../../node_modules/.pnpm/@sanity+sdk-react@3.3.0_@ty_4486c437e79c4a2290b23584b94bf357/node_modules/@sanity/sdk-react/dist/index.js",
+      "file": "@sanity_sdk-react.js",
+      "fileHash": "01cd9df6",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-FNIVEC2U": {
+      "file": "chunk-FNIVEC2U.js"
+    },
+    "chunk-YOL4SAJZ": {
+      "file": "chunk-YOL4SAJZ.js"
+    },
+    "stegaEncodeSourceMap-Dj29aWKG-5BQTBDN5": {
+      "file": "stegaEncodeSourceMap-Dj29aWKG-5BQTBDN5.js"
+    },
+    "browserUpload-BTQyjHMj-6UBKDBSU": {
+      "file": "browserUpload-BTQyjHMj-6UBKDBSU.js"
+    },
+    "clientStore-BI4D8HhJ-OC64SIIG": {
+      "file": "clientStore-BI4D8HhJ-OC64SIIG.js"
+    },
+    "chunk-6GTGSWIH": {
+      "file": "chunk-6GTGSWIH.js"
+    },
+    "chunk-TQF76M4J": {
+      "file": "chunk-TQF76M4J.js"
+    },
+    "chunk-YG2ZALVI": {
+      "file": "chunk-YG2ZALVI.js"
+    },
+    "chunk-6K7ISYVF": {
+      "file": "chunk-6K7ISYVF.js"
+    },
+    "chunk-5WRI5ZAA": {
+      "file": "chunk-5WRI5ZAA.js"
+    }
+  }
+}

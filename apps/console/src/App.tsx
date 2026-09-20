@@ -42,6 +42,15 @@ import {SignIn} from './ui/SignIn'
  * build number is unfalsifiable.
  */
 
+/**
+ * Where the documentation is served.
+ *
+ * A separate process on a separate port, so it has to be configurable: on a
+ * developer's machine it is localhost, and in a deployment it is a hostname
+ * this app has no way to guess.
+ */
+const DOCS_URL = import.meta.env.VITE_DOCS_URL ?? 'http://localhost:3100'
+
 type PanelId = 'feed' | 'conflicts' | 'lineage' | 'queue' | 'audit'
 
 interface PanelDef {
@@ -498,12 +507,29 @@ function StatusBar({
 
       {/* Reachability, not identity. Saying "offline" because nobody has
           signed in reports a healthy process as a dead one. */}
-      <div className="stat" style={{borderRight: 0}}>
+      <div className="stat">
         <span className="stat-k">Engine</span>
         <span className={`stat-v ${mode === 'offline' ? '' : 'ok'}`}>
           {mode === 'offline' ? 'unreachable' : 'connected'}
         </span>
       </div>
+
+      {/* Every number to the left of this is a term with a precise meaning —
+          build, outline hash, places wrong, sources disagreeing — and an
+          operator who does not yet know them has nowhere to go from here. The
+          documentation is a separate process on a separate port, so the console
+          is the only place that can say where it is. */}
+      <a
+        className="stat stat-link"
+        style={{borderRight: 0}}
+        href={DOCS_URL}
+        target="_blank"
+        rel="noreferrer noopener"
+        title="What these numbers mean, the content model, the gate, the API — opens the documentation site"
+      >
+        <span className="stat-k">Reference</span>
+        <span className="stat-v">Docs ↗</span>
+      </a>
       </div>
     </div>
   )
