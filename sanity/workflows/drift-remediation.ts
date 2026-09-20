@@ -33,6 +33,23 @@ import {
  * role, so the edge is closed to it by the deployed definition rather than by a
  * prompt asking it nicely.
  *
+ * # Why each decision is written down before it is routed on
+ *
+ * A transition with no `when` defaults to `$allActivitiesDone`. Two such
+ * transitions leaving one stage are therefore both satisfied the moment the
+ * stage's activity resolves, and the engine takes the first — so `reject` would
+ * have routed to `drafting` and `send-back` would have *published*.
+ *
+ * That is not a hypothetical. It is what the definition did, discovered the
+ * first time anything actually ran it (`packages/workflow-runner`), and it is
+ * the argument for instantiating a workflow rather than typechecking one: the
+ * types were correct throughout.
+ *
+ * The fix is to make the decision a value rather than an implication. Each
+ * adjudicating action records what was decided in a workflow field, and each
+ * transition reads it. A stage can then only leave by the edge somebody chose,
+ * and the instance carries the reason it went that way.
+ *
  * (Worth noting for the build log: the stage-level `requireAssignment` /
  * `requireValidation` properties that several write-ups mention do not exist in
  * @sanity/workflow-engine 0.33.0. Gating is expressed on actions via `roles`.)
@@ -52,6 +69,24 @@ export const driftRemediation = defineWorkflow({
       required: true,
       description: 'The driftEvent document this instance moves through the stages.',
       initialValue: {type: 'input'},
+    }),
+    defineField({
+      type: 'string',
+      name: 'triageDecision',
+      title: 'Triage decision',
+      description:
+        'What the human concluded in triage: `confirmed` or `dismissed`. Written by the ' +
+        'action, read by the transitions, and left on the instance afterwards so the ' +
+        'record says why it went the way it did.',
+    }),
+    defineField({
+      type: 'string',
+      name: 'reviewDecision',
+      title: 'Review decision',
+      description:
+        'What the owner concluded in review: `approved` or `sent-back`. The DRIFT gate is ' +
+        'what decides which of those the owner is allowed to record — see ' +
+        'packages/workflow-runner/src/engine-gate.ts.',
     }),
   ],
   stages: [
@@ -89,19 +124,43 @@ export const driftRemediation = defineWorkflow({
               title: 'Confirm — this is real',
               status: 'done',
               roles: ['administrator', 'editor'],
+              ops: [
+                {
+                  type: 'field.set',
+                  target: {scope: 'workflow', field: 'triageDecision'},
+                  value: {type: 'literal', value: 'confirmed'},
+                },
+              ],
             }),
             defineAction({
               name: 'reject',
               title: 'Reject — false positive',
               status: 'done',
               roles: ['administrator', 'editor'],
+              ops: [
+                {
+                  type: 'field.set',
+                  target: {scope: 'workflow', field: 'triageDecision'},
+                  value: {type: 'literal', value: 'dismissed'},
+                },
+              ],
             }),
           ],
         }),
       ],
       transitions: [
-        defineTransition({name: 'to-drafting', title: 'Draft corrections', to: 'drafting'}),
-        defineTransition({name: 'to-dismissed', title: 'Dismiss', to: 'dismissed'}),
+        defineTransition({
+          name: 'to-drafting',
+          title: 'Draft corrections',
+          to: 'drafting',
+          when: '$allActivitiesDone && $fields.triageDecision == "confirmed"',
+        }),
+        defineTransition({
+          name: 'to-dismissed',
+          title: 'Dismiss',
+          to: 'dismissed',
+          when: '$allActivitiesDone && $fields.triageDecision == "dismissed"',
+        }),
       ],
     }),
 
@@ -141,19 +200,43 @@ export const driftRemediation = defineWorkflow({
               title: 'Approve and publish',
               status: 'done',
               roles: ['administrator', 'editor'],
+              ops: [
+                {
+                  type: 'field.set',
+                  target: {scope: 'workflow', field: 'reviewDecision'},
+                  value: {type: 'literal', value: 'approved'},
+                },
+              ],
             }),
             defineAction({
               name: 'send-back',
               title: 'Send back for redraft',
               status: 'done',
               roles: ['administrator', 'editor'],
+              ops: [
+                {
+                  type: 'field.set',
+                  target: {scope: 'workflow', field: 'reviewDecision'},
+                  value: {type: 'literal', value: 'sent-back'},
+                },
+              ],
             }),
           ],
         }),
       ],
       transitions: [
-        defineTransition({name: 'to-published', title: 'Publish', to: 'published'}),
-        defineTransition({name: 'back-to-drafting', title: 'Redraft', to: 'drafting'}),
+        defineTransition({
+          name: 'to-published',
+          title: 'Publish',
+          to: 'published',
+          when: '$allActivitiesDone && $fields.reviewDecision == "approved"',
+        }),
+        defineTransition({
+          name: 'back-to-drafting',
+          title: 'Redraft',
+          to: 'drafting',
+          when: '$allActivitiesDone && $fields.reviewDecision == "sent-back"',
+        }),
       ],
     }),
 

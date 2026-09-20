@@ -1,0 +1,19 @@
+{
+  "name": "@drift/workflow-runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Runs the deployed drift-remediation definition against an in-memory Sanity, with the DRIFT gate deciding the last edge.",
+  "scripts": {
+    "demo": "node --experimental-strip-types --no-warnings=ExperimentalWarning src/run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sanity/workflow-engine": "0.33.0",
+    "groq-js": "1.30.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
+  }
+}

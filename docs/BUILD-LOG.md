@@ -862,6 +862,203 @@ empty - the same class of mistake as the reduce, made by me rather than by the c
 
 ---
 
+## Instantiating the workflow, and the two bugs that fell out
+
+`drift-remediation.ts` had been ticked off as "typechecks against
+`@sanity/workflow-engine@0.33.0`" for days. That was true and it was not worth much. The
+definition's central claim — *the drafting agent cannot reach `published`* — was a comment
+above a `roles: [...]` array, and nothing had ever run the machine.
+
+`packages/workflow-runner` runs it. The obstacle was never the engine: `createEngine`,
+`deployDefinitions`, `startInstance` and `fireAction` are all there in 0.33.0. It was
+identity. The engine does not take an actor as an argument:
+
+> The engine resolves the actor from the client's token via
+> `client.request({url: '/users/me'})`.
+
+So a run with two principals needs two clients over two tokens, and a client needs a Sanity
+project. Rather than make the proof depend on credentials nobody checking out the repo has,
+the runner supplies an in-memory `WorkflowClient`: GROQ through `groq-js` over a `Map`,
+`create`/`patch`/`transaction` with revisions actually enforced, and `request()` answering
+`/users/me`, `/projects/:id` and `/projects/:id/roles`. The engine is the real one. Only the
+lake is fake.
+
+Two details had to be right and were not obvious:
+
+- Principal ids carry a namespace. `g…` is an account-global user, `p-…` a robot token,
+  anything else is project-scoped and refused outright. The drafting agent is `p-…`, which
+  is the same distinction DRIFT's own `Actor.IsAgent` draws, arrived at independently.
+- The subject wants a GDR URI, not a document id. `gdrFromResource` builds it.
+
+### The role gate holds, and now says so in the engine's own words
+
+With the agent's client bound to a `viewer` token, `approve` from `review` comes back:
+
+```
+availableActions: offered, allowed=false
+  reason={"kind":"filter-failed",
+          "filter":"count($actor.roles[@ in [\"administrator\",\"editor\"]]) > 0"}
+fireAction refused: Action "approve:approve" is not allowed: action filter returned false
+```
+
+`roles` desugars into a condition the engine evaluates, exactly as the definition's comment
+claimed. Both halves are checked, because they fail differently: `availableActions` is what
+a console would draw, `fireAction` is what an agent with its own HTTP client would call
+having never seen a button.
+
+### Every transition in the definition was ambiguous
+
+The first full run ended in `published` after the gate had **refused**.
+
+A transition with no `when` defaults to `$allActivitiesDone`. Both edges out of `review`
+therefore became satisfiable the instant the stage's single activity resolved, and the
+engine took the first one declared — so `send-back` published. `reject` had the same shape:
+it would have gone to `drafting` instead of `dismissed`.
+
+This is the whole argument for running a definition rather than compiling one. Every type
+was correct. Every stage, action and role was correct. The graph was wrong, and no amount of
+`tsc` was ever going to say so.
+
+Each adjudicating action now writes its decision into a workflow field and each transition
+reads it, so a stage can only leave by the edge somebody chose — and the instance carries
+the reason afterwards.
+
+### The `v` prefix, again, in the other client
+
+With the workflow wired, the run asks `POST /v1/corrections/approve` and lets the answer
+pick the edge. Against a project with credentials that came back:
+
+```
+502 publish: mutation rejected (HTTP 404): {"message":"no Route matched with those values"}
+```
+
+Which is in this log already, twenty entries up, about Agent Actions. `internal/agent`
+normalises its API version to `vX`. `internal/contentlake` did not:
+
+```
+https://<project>.api.sanity.io/2026-09-01/data/mutate/<dataset>    404
+https://<project>.api.sanity.io/v2026-09-01/data/mutate/<dataset>   correct
+```
+
+Every real publication had been 404ing while the gate passed, the approval was audited and
+the outcome said `applied: false` with a transport error. The unit tests did not catch it
+because `fakeLake` served whatever path it was asked for — a test double that answers any
+request cannot fail the way production does. It now asserts the path, and a second test
+stops a caller-supplied version from reintroducing it.
+
+I knew this failure mode. I had written it down. I fixed it in one client and not the other,
+and only found the second one because something finally tried to publish for real.
+
+### The runner lied about who wrote the sentence
+
+Pointed at a project with Agent Actions configured, the run printed:
+
+```
+drafted by    this script — Agent Actions are not configured, so no model ran
+```
+
+They were configured. The engine had logged `agent actions ready` eleven seconds
+earlier, and `POST /v1/corrections/draft` returned 200 with a model-written correction.
+
+The runner read `proposedText` off the response. `agent.Draft` calls the field `after`.
+So the key came back undefined, the function fell through to its fallback, and the
+fallback announced a cause it had never checked — it was a fixed string, written on the
+assumption that the only reason drafting fails is that it is switched off.
+
+The text the fallback substituted happened to be identical to what the model produced, so
+nothing downstream looked wrong. Only the attribution was false, which is the worse half:
+the whole point of naming the source on that line is that a reader can trust it.
+
+The failure path now reports rather than asserts. 503 is the engine saying Agent Actions
+are genuinely absent and is the only case that gets that wording; every other status, a
+transport error, and a missing `after` each say what actually happened, with an excerpt.
+The drafter's own `fieldPath` and `buildId` now flow into the gate request too, instead of
+constants the runner was quietly asserting on the model's behalf — those are exactly what
+`scope_respected` and `build_current` compare against.
+
+A guessed cause in an error message is the same defect as a fabricated audit entry, at
+lower stakes. I built a thing whose argument is *do not report a confident answer nobody
+checked*, and put one in its own transcript.
+
+---
+
+### What is still not proven
+
+`published` is reachable only when the approval actually publishes, and that needs a Content
+Lake the engine can write to. Against committed fixtures the gate refuses anyway — the
+`support/returns` conflict is unresolved and resolving one is display-only everywhere:
+`PermResolveConflict` exists, the Conflict Room renders, and there is no endpoint behind it.
+So the run exercises five of the six transitions, and says which one it did not.
+
+That is the correct outcome rather than a missing feature. `published` means *corrections
+are live*. An instance that entered it on a publication which 404ed would be the audit trail
+asserting a fix that never happened — the precise thing this product exists to prevent.
+
+---
+
+## Writing the corpus found two bugs in the extraction that reads it
+
+Context cleared the Labs flag, so the Knowledge Base finally has somewhere to
+live. Before uploading anything I ran `ledger.claimFromEntry`'s own rules over the
+six source documents — `firstSentence`, then the quantity regex — to check each
+commitment would type. Two did not.
+
+**"a 15% restocking fee" extracted nothing.** The pattern ended in ``, and a
+word boundary needs a word character to sit against. `%` is not one, so the
+boundary after it never matched. `15 percent` worked the whole time, which is
+why nobody noticed: the fixture hardcodes `Value: f(15), Unit: "percent"`, so the
+extraction path was never the thing under test. Boundaries are now per-alternative,
+on the alternatives that are words.
+
+**"dispatched within 2 business days" extracted nothing**, and this one would
+have broken the demo's best moment.
+
+The pattern required the number and the unit to be adjacent. A qualifier between
+them is how every shipping policy on earth is written. An untyped claim is
+compared as prose, and `diffClaim` reports *any* statement change on an untyped
+claim as `contradicted` at 0.55 — so `shipping/dispatch-time`, reworded from
+"Orders are dispatched within 2 business days" to "We dispatch orders within 2
+business days of purchase" with the commitment unchanged, would have raised a
+drift event.
+
+That row is the one I would point at in a demo. Anyone can show a detector
+firing. Staying silent on a reworded-but-unchanged fact is the harder claim, and
+it is what decides whether an operator trusts the feed enough to keep reading it.
+On fixtures it passes, because the fixture hands the differ a typed claim
+directly. On the live path it would have failed, and it would have failed on
+stage.
+
+The qualifier list is closed — `business`, `working`, `calendar` — not a general
+word match. Allowing any word would let the extraction guess what a number refers
+to, and a wrong typed value is worse than none: it reports confidence 1.0 on a
+comparison of two numbers that do not mean the same thing.
+
+### A test that asserted a promise nobody made
+
+The first negative test I wrote for this used "Returns pass 2 out of 3 days of
+inspection" and asserted no typed value. It failed: `3 days` matches on plain
+adjacency, and always did. That is the documented conservatism of the rule, not a
+gap the widening opened. I had written a test for a guarantee the function never
+offered, and had it passed for the wrong reason I would have believed it.
+
+Rewritten to test what the change actually promises — that an *unlisted*
+qualifier does not bridge a number to a unit — with the limitation it does not
+cover written down beside it.
+
+### What the fixtures were hiding
+
+Both bugs share a shape. `internal/seeddata` hands the differ finished claims
+with `Value` and `Unit` already set, so every test of the drift pipeline runs
+without ever exercising the code that derives them from prose. The fixtures are
+the demo frozen, and freezing the demo froze the extraction out of the test path
+entirely.
+
+Worth stating as a general lesson rather than a local fix: a fixture that starts
+downstream of a transformation cannot test the transformation, and the more
+faithful the fixture looks, the less obvious that is.
+
+---
+
 ## Running tally of things that cost time
 
 | Cost | Cause | Avoidable? |
@@ -894,3 +1091,12 @@ empty - the same class of mistake as the reduce, made by me rather than by the c
 | ~20 min | `target.path` sent as a GROQ string, not a segment list | Partly - the error named a key, not a shape |
 | ~10 min | Concluded an import had failed from an unauthenticated empty read | Yes - I verified with a method that cannot distinguish empty from forbidden |
 | ~10 min | `currentBuild` reduce with no initial value, blank screen on an unseeded dataset | Yes - fixtures were never empty, so it was never exercised |
+| ~30 min | Engine resolves the actor from the client token, so a two-principal run needs two clients and a fake `/users/me` | No - stated clearly in the error, once it threw |
+| ~20 min | Every transition defaulted to `$allActivitiesDone`, so `send-back` published and `reject` drafted | Yes - only ever found by running the definition, which is the point |
+| ~15 min | Content Lake mutate URL missing the `v` prefix - the same bug as Agent Actions, in the other client | Yes - I had already written this exact entry once |
+| ~5 min | `fakeLake` served any path, so the URL bug survived twelve publisher tests | Yes - assert the request line, not only the body |
+| ~10 min | Runner read `proposedText`; the drafter returns `after` - so a live model call silently fell back | Yes - I never once called the endpoint and looked at its body |
+| — | The fallback then *stated* a cause it had not checked, and was wrong | Yes - error paths report, they do not assert |
+| ~15 min | `%` never typed: the trailing `` had no word character to sit against | Yes - `15 percent` worked, so the gap was invisible |
+| ~15 min | "2 business days" never typed, which would have fired the deliberate non-event live | Yes - fixtures hand the differ typed claims, so extraction was never under test |
+| ~5 min | Wrote a negative test for a guarantee the extraction never made | Yes - it failed, which is the system working |

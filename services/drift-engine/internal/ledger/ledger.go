@@ -216,8 +216,31 @@ var citation = regexp.MustCompile(`(?m)^\s*\[\d+\]:\s*(\S+)`)
 // Anything this misses simply falls through to the semantic path, gets 0.55
 // confidence, and reaches a human. Missing a typed value costs attention;
 // inventing one costs trust.
+//
+// # Two things the first version got wrong
+//
+// A qualifier between the number and the unit is normal in policy prose, and
+// "dispatched within 2 business days" is how every shipping policy on earth is
+// written. The first version required the two to be adjacent, so it extracted
+// nothing — and an untyped claim is compared as prose, where *any* rewording
+// is reported as a contradiction at 0.55. A policy reworded from "Orders are
+// dispatched within 2 business days" to "We dispatch orders within 2 business
+// days of purchase" would therefore have raised a drift event for a commitment
+// that had not moved. Silence on a reworded-but-unchanged fact is the hardest
+// thing this differ does and the easiest one to lose.
+//
+// The qualifier list is closed — business, working, calendar — rather than a
+// general word match. Allowing any word would match "2 out of 3 days" and
+// invent a typed value, which is the failure this whole function exists to
+// avoid.
+//
+// Separately, % never matched. The trailing word boundary needs a word
+// character to sit against and % is not one, so "a 15% restocking fee" fell
+// through while "15 percent" worked. Boundaries are now per-alternative, on
+// the alternatives that are words.
 var quantity = regexp.MustCompile(
-	`(?i)\b(\d+(?:\.\d+)?)\s*(days?|months?|years?|hours?|percent|%|USD|EUR|GBP)\b`)
+	`(?i)\b(\d+(?:\.\d+)?)\s*(?:business\s+|working\s+|calendar\s+)?` +
+		`(days?\b|months?\b|years?\b|hours?\b|percent\b|%|USD\b|EUR\b|GBP\b)`)
 
 var unitCanonical = map[string]string{
 	"day": "days", "days": "days",

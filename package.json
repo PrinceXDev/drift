@@ -15,7 +15,8 @@
     "test": "turbo run test",
     "engine:test": "cd services/drift-engine && go test ./...",
     "engine:run": "cd services/drift-engine && go run ./cmd/engine",
-    "workflow:deploy": "sanity-workflows deploy"
+    "workflow:deploy": "sanity-workflows deploy",
+    "workflow:demo": "pnpm --filter @drift/workflow-runner demo"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
@@ -26,7 +27,8 @@
     "@sanity/blueprints": "0.26.1",
     "@sanity/functions": "1.8.0",
     "@sanity/workflow-cli": "0.33.0",
-    "@sanity/workflow-engine": "0.33.0"
+    "@sanity/workflow-engine": "0.33.0",
+    "groq-js": "1.30.3"
   },
   "pnpm": {
     "overrides": {

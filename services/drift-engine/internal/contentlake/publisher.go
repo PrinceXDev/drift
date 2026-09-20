@@ -58,7 +58,18 @@ import (
 //
 // Pinned rather than floating so a server-side change cannot alter how a
 // correction is written between a human approving it and the write landing.
-const DefaultAPIVersion = "2026-09-01"
+//
+// The leading `v` is not optional and its absence is not diagnosable from the
+// response: `https://<project>.api.sanity.io/2026-09-01/data/mutate/<dataset>`
+// answers `404 {"message":"no Route matched with those values"}`, which reads
+// like a wrong project or a wrong dataset. The drafter learned this the
+// expensive way (see internal/agent, and the build log); the publisher was
+// still getting it wrong, so every real publication 404ed while the gate,
+// the audit trail and the approval all looked healthy.
+//
+// Normalised in New rather than only stated here, because a caller supplying
+// APIVersion would hit exactly the same wall.
+const DefaultAPIVersion = "v2026-09-01"
 
 // Config describes a Publisher.
 type Config struct {
@@ -126,6 +137,9 @@ func New(cfg Config) (*Publisher, error) {
 	}
 	if p.apiVersion == "" {
 		p.apiVersion = DefaultAPIVersion
+	}
+	if !strings.HasPrefix(p.apiVersion, "v") {
+		p.apiVersion = "v" + p.apiVersion
 	}
 	if p.http == nil {
 		p.http = &http.Client{Timeout: 30 * time.Second}

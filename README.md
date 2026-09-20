@@ -92,6 +92,7 @@ apps/
 packages/
   schema/         8 document types - the single source of truth
   fixtures/       engine output, committed - shared by console and web
+  workflow-runner/ runs the deployed workflow for real, against an in-memory Sanity
 services/
   drift-engine/
     cmd/engine/   HTTP API + poll ticker
@@ -115,6 +116,7 @@ services/
       api/        HTTP + SSE, per-route authorization
       seeddata/   the demo, defined exactly once
 sanity/
+  knowledge-base/ the source corpus the live KB is built from - two builds
   workflows/      drift-remediation workflow definition
   functions/      on-assertion-change (deployed), poll-kb-build (shim)
   seed/           northwind.ndjson - 35 documents
@@ -165,7 +167,12 @@ than one:
    rather than by position (see [ADR-0007](docs/decisions/0007-address-blocks-by-key.md)).
    Even without `noWrite`, the blast radius of a bad draft is one paragraph.
 3. **Role gating** — the only workflow action routing into `published` requires
-   `administrator` or `editor`, and an unattended agent holds no role.
+   `administrator` or `editor`, and an unattended agent holds neither. This one is
+   demonstrated rather than asserted: `pnpm workflow:demo` runs the deployed definition
+   and has the agent attempt `approve` twice. The engine desugars the action's `roles`
+   into `count($actor.roles[@ in ["administrator","editor"]]) > 0`, withholds the action
+   from the agent entirely, and throws when it calls `fireAction` anyway. See
+   [Running the workflow](#running-the-workflow).
 
 Any one of those could be misconfigured and the promise still holds. Document text also
 reaches the model as typed `instructionParams`, never concatenated into the instruction, so
@@ -244,6 +251,59 @@ curl -s localhost:8080/v1/drift | jq .summary
 Toolchain: Node 22.17 · pnpm 10.27 · Go 1.26 · TypeScript 5.9.3 (pinned — see
 [ADR-0003](docs/decisions/0003-pin-typescript-5.md)).
 
+## Running the workflow
+
+With the engine up, move one real drift event through `drift-remediation`:
+
+```bash
+pnpm workflow:demo
+```
+
+No Sanity project and no token. The workflow side runs against an in-memory
+`WorkflowClient` (`packages/workflow-runner/src/memory-client.ts`) while the engine — the
+same `createEngine`, the same deployed definition, the same `fireAction` — is the real
+`@sanity/workflow-engine@0.33.0`. Two principals act: a robot token holding `viewer`, and
+Sam holding `editor`.
+
+```
+5 · the agent tries to approve, from `drafting`
+availableActions: withheld entirely
+              fireAction refused: Activity "approve" not found in current stage "drafting"
+
+7 · the agent tries to approve, from `review`
+availableActions: offered, allowed=false
+              reason={"kind":"filter-failed",
+                      "filter":"count($actor.roles[@ in [\"administrator\",\"editor\"]]) > 0"}
+              fireAction refused: Action "approve:approve" is not allowed: action filter returned false
+
+8 · the gate decides the edge
+  BLOCK no_unresolved_conflict  sources still disagree about support/returns (2 competing values)
+gate          refused
+              the click becomes a redraft, not a publication
+
+result
+final stage   drafting
+```
+
+The last step is the wiring. The human does not choose the transition — `POST
+/v1/corrections/approve` does. An allowed-and-published answer fires `approve`; a refusal
+fires `send-back`; anything that is not a decision at all (an unreachable engine, no
+Content Lake to write to) moves nothing, because a workflow that advanced on a transport
+failure would be asserting an outcome nobody decided. The run exits non-zero if the agent
+ever gets through or if the instance lands somewhere the gate did not choose, and CI runs it
+on every push.
+
+Against committed fixtures the gate refuses, because `support/returns` has an unresolved
+source disagreement and resolving one is not yet wired to an endpoint. `published` is
+therefore reachable only against a project the engine can actually write to — which is
+correct rather than missing: that stage means *corrections are live*.
+
+**What running it found.** Every transition in the definition had defaulted to
+`$allActivitiesDone`, so both edges out of `review` were satisfied at once and the engine
+took the first — `send-back` published. The same bug sent `reject` to `drafting` instead of
+`dismissed`. Each adjudicating action now records its decision in a workflow field and each
+transition reads it. The types had been correct the whole time.
+
 ## Status
 
 | Component                                              | State                                                                               |
@@ -259,12 +319,13 @@ Toolchain: Node 22.17 · pnpm 10.27 · Go 1.26 · TypeScript 5.9.3 (pinned — s
 | Knowledge Control Room                                 | ✅ feed · causal graph · conflict room · lineage · queue · audit · time travel      |
 | `drift-engine` — surface registry                      | ✅ agents register as dependents; one walk covers pages and bots                    |
 | Claim lineage                                          | ✅ source · created · verified · published · changed, plus the claim's own timeline |
-| `drift-engine` — resilience · Content Lake publisher   | ✅ atomic writes, retry, breaker                                                    |
-| Go test suite                                          | ✅ **233 tests passing** across 15 packages                                         |
-| `drift-remediation` workflow                           | ✅ typechecks against `@sanity/workflow-engine@0.33.0`                              |
+| `drift-engine` — resilience · Content Lake publisher   | ✅ atomic writes, retry, breaker; the mutate path is now version-pinned and tested  |
+| Go test suite                                          | ✅ **243 tests passing** across 15 packages                                         |
+| `drift-remediation` workflow                           | ✅ **instantiated** — deployed, driven by two principals, gate picks the last edge  |
+| `@drift/workflow-runner`                               | ✅ in-memory `WorkflowClient`; agent refused `approve` twice; runs in CI            |
 | Seed dataset (`cmd/seed`)                              | ✅ 35 documents of NDJSON + console fixtures, one source of truth                   |
 | App SDK console                                        | ✅ real `@sanity/sdk-react` — Sanity auth, live `useQuery` over project content |
-| Knowledge Base + Context MCP                           | ⏳ blocked on org Labs flag                                                         |
+| Knowledge Base + Context MCP                           | ⏳ Context enabled; corpus committed in `sanity/knowledge-base`, build pending      |
 | Live Sanity data source                                | ⏳ blocked on org-level Context Viewer token                                        |
 | Next.js public site                                    | ✅ 7 pages prerendering, integrity strip per page                                   |
 | Sanity Studio                                          | ✅ builds, desk organised around sources                                            |

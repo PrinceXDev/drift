@@ -96,3 +96,55 @@ jobs:
 
       - name: Build console and site
         run: pnpm -r build
+
+  workflow:
+    name: Workflow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache-dependency-path: services/drift-engine/go.mod
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.17.0'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Fixture mode, and deliberately no Sanity credentials: the run has to
+      # work for anyone who checks the repository out. The engine warns that
+      # approvals will be gated and audited but nothing will be written, which
+      # is exactly the state the run then reports.
+      # Built rather than `go run`, so the background process is the binary
+      # and not a toolchain wrapper the runner can reap between steps.
+      - name: Build the DRIFT engine
+        working-directory: services/drift-engine
+        run: go build -o /tmp/drift-engine ./cmd/engine
+
+      - name: Start the DRIFT engine
+        run: |
+          nohup /tmp/drift-engine -fixtures -addr 127.0.0.1:8080 > /tmp/engine.log 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl -sf localhost:8080/healthz > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo "::error::the engine never became healthy"; cat /tmp/engine.log; exit 1
+
+      # Runs the deployed definition for real: two principals, the agent
+      # attempting `approve` twice, and the gate picking the last edge. Exits
+      # non-zero if the agent ever gets through, or if the instance lands in a
+      # stage the gate did not choose.
+      - name: drift-remediation moves one draft, and the agent cannot publish
+        run: pnpm --filter @drift/workflow-runner demo
+
+      - name: Engine log
+        if: always()
+        run: cat /tmp/engine.log

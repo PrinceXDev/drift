@@ -182,3 +182,75 @@ func TestCapture_ClaimIDsAreStableAcrossBuilds(t *testing.T) {
 		}
 	}
 }
+
+// A qualifier between the number and its unit is how policy prose is actually
+// written, and the value has to survive it.
+//
+// This is not cosmetic. An untyped claim is compared as prose, so *any*
+// rewording of it is reported as a contradiction at 0.55 — which means a
+// shipping policy reworded without changing its commitment would have raised a
+// drift event. Staying silent on a reworded-but-unchanged fact is the hardest
+// thing the differ does, and it rests on this extraction.
+func TestCapture_TypesAQuantityWrittenWithAQualifier(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		statement string
+		want      float64
+		unit      string
+	}{
+		{"business days", "Orders are dispatched within 2 business days.", 2, "days"},
+		{"working days", "Refunds are issued within 5 working days.", 5, "days"},
+		{"calendar days", "The hold lasts 30 calendar days.", 30, "days"},
+		{"no qualifier", "Returns are accepted within 45 days of delivery.", 45, "days"},
+		// `%` never matched before: the trailing word boundary had no word
+		// character to sit against.
+		{"percent sign", "Opened items are subject to a 15% restocking fee.", 15, "percent"},
+		{"percent word", "Opened items are subject to a 15 percent restocking fee.", 15, "percent"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			kb := newKB()
+			kb.entries = map[string]string{"support/x": tc.statement + "\n"}
+			kb.tiers = nil
+
+			snap, err := ledger.Capture(context.Background(), kb, "kb.test", 1, at)
+			if err != nil {
+				t.Fatalf("capture: %v", err)
+			}
+			claim := snap.Claims[0]
+			if claim.Value == nil {
+				t.Fatalf("%q extracted no typed value; it would fall to the semantic path", tc.statement)
+			}
+			if *claim.Value != tc.want || claim.Unit != tc.unit {
+				t.Errorf("extracted %g %s, want %g %s", *claim.Value, claim.Unit, tc.want, tc.unit)
+			}
+		})
+	}
+}
+
+// The qualifier list is closed on purpose.
+//
+// Only `business`, `working` and `calendar` may sit between the number and its
+// unit. Allowing any word would make the extraction guess at what a number
+// refers to, and a wrong typed value is worse than no typed value: it reports
+// confidence 1.0 on a comparison of two numbers that do not mean the same thing.
+//
+// Note what this test does NOT claim. Plain adjacency still wins wherever it
+// occurs, so a sentence containing "3 days" anywhere types as three days even
+// if the surrounding prose means something else. That is the documented,
+// pre-existing conservatism of the rule, not a gap this widening opened, and
+// pretending otherwise here would be a test asserting a promise nobody made.
+func TestCapture_DoesNotBridgeNumberAndUnitWithAnArbitraryWord(t *testing.T) {
+	kb := newKB()
+	kb.entries = map[string]string{
+		"support/x": "Returns are inspected within 2 supplementary days.\n",
+	}
+	kb.tiers = nil
+
+	snap, err := ledger.Capture(context.Background(), kb, "kb.test", 1, at)
+	if err != nil {
+		t.Fatalf("capture: %v", err)
+	}
+	if v := snap.Claims[0].Value; v != nil {
+		t.Errorf("invented a typed value of %g from an unlisted qualifier; it must stay untyped", *v)
+	}
+}

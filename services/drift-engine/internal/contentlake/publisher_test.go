@@ -24,6 +24,7 @@ type fakeLake struct {
 	body      map[string]any
 	query     map[string]string
 	auth      string
+	path      string
 	status    int
 	response  string
 	failFirst int32 // fail this many calls before succeeding
@@ -34,6 +35,7 @@ func (f *fakeLake) handler() http.HandlerFunc {
 		n := f.calls.Add(1)
 
 		f.auth = r.Header.Get("Authorization")
+		f.path = r.URL.Path
 		f.query = map[string]string{}
 		for k, v := range r.URL.Query() {
 			if len(v) > 0 {
@@ -151,6 +153,58 @@ func TestPublish_PatchesPageAndAssertionInOneTransaction(t *testing.T) {
 	}
 	if !sawPage || !sawAssertion {
 		t.Error("both the page and its assertion must be patched")
+	}
+}
+
+// The API version in the path needs its leading `v`.
+//
+// Without it the Content Lake answers `404 {"message":"no Route matched with
+// those values"}` — an error that reads like a wrong project or a wrong
+// dataset and says nothing about the version. This shipped broken: the gate
+// passed, the approval was audited, and every real publication 404ed, because
+// the fake lake here served any path at all.
+//
+// So the path is asserted, not just the body. A test double that answers
+// whatever it is asked cannot fail the way production does.
+func TestPublish_AddressesAVersionedAPIPath(t *testing.T) {
+	f := &fakeLake{t: t}
+	p := newPublisher(t, f)
+
+	if err := p.Publish(context.Background(), request()); err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+
+	want := "/" + contentlake.DefaultAPIVersion + "/data/mutate/production"
+	if f.path != want {
+		t.Errorf("wrote to %q, want %q", f.path, want)
+	}
+	if !strings.HasPrefix(contentlake.DefaultAPIVersion, "v") {
+		t.Errorf("DefaultAPIVersion = %q; the Content Lake only routes `vYYYY-MM-DD`",
+			contentlake.DefaultAPIVersion)
+	}
+}
+
+// A caller supplying an unprefixed version must not be able to reintroduce the
+// same 404 the default was fixed to avoid.
+func TestNew_NormalisesAnUnprefixedAPIVersion(t *testing.T) {
+	f := &fakeLake{t: t}
+	srv := httptest.NewServer(f.handler())
+	t.Cleanup(srv.Close)
+
+	p, err := contentlake.New(contentlake.Config{
+		ProjectID: "abc123", Dataset: "production", Token: "write-token",
+		APIVersion: "2026-09-01",
+		HTTPClient: srv.Client(), BaseURL: srv.URL, Logger: quiet(),
+	})
+	if err != nil {
+		t.Fatalf("new publisher: %v", err)
+	}
+	if err := p.Publish(context.Background(), request()); err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+
+	if want := "/v2026-09-01/data/mutate/production"; f.path != want {
+		t.Errorf("wrote to %q, want %q", f.path, want)
 	}
 }
 
