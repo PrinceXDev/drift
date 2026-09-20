@@ -1659,3 +1659,21 @@ hr.rule {
     grid-column: 2;
   }
 }
+
+/* The one item in the status bar that goes somewhere. Styled as a stat rather
+   than as a button because it is reference material, not an action: it must not
+   compete with approve or resolve for an operator's attention. */
+.stat-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.stat-link:hover {
+  background: var(--surface-2, rgba(255, 255, 255, 0.04));
+}
+
+.stat-link:hover .stat-v {
+  color: var(--accent, var(--ok));
+}

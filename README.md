@@ -89,6 +89,7 @@ apps/
   dissent/        the Path One agent - answers only once sources agree
   web/            Next.js public site - the content that drifts
   studio/         Sanity Studio - where sources are edited, so where drift starts
+  site/           the landing page and the documentation - every moving part, written down
 packages/
   schema/         8 document types - the single source of truth
   fixtures/       engine output, committed - shared by console and web
@@ -219,6 +220,23 @@ references, a build ID, a confidence and a detector:
 1. **Claim extraction** from entry prose — proposals enter a review queue.
 2. **Correction drafting** — Agent Actions `Transform` with `noWrite: true`, scoped to one block.
 3. **Conflict explanation** — phrasing only; the conflict itself is structural.
+
+## Documentation
+
+The full documentation — the content model field by field, the engine package by package, the
+HTTP surface, the Sanity integration, the decision records and the build log — is a site in this
+repository:
+
+```bash
+pnpm --filter @drift/site dev
+```
+
+Screenshots and the walkthrough recording on its landing page are captured from the running
+apps rather than mocked up:
+
+```bash
+node tools/capture/capture.mjs --video
+```
 
 ## Development
 
