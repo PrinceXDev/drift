@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref — a 15-day build does not need to burn
+# minutes finishing CI for a commit that has already been replaced.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    name: Go engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache-dependency-path: services/drift-engine/go.mod
+
+      - name: gofmt
+        working-directory: services/drift-engine
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt needed on:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: go vet
+        working-directory: services/drift-engine
+        run: go vet ./...
+
+      # The race detector needs cgo. It is on by default on the Ubuntu runner;
+      # set explicitly so a future runner change does not silently drop it.
+      # (Windows developers without gcc should run plain `go test ./...` locally.)
+      - name: Tests with race detector
+        working-directory: services/drift-engine
+        env:
+          CGO_ENABLED: '1'
+        run: go test -race ./...
+
+      # The golden file is the demo, frozen. If the committed fixtures no longer
+      # match what the engine produces, the console and the public site are
+      # rendering something the engine cannot actually do — which is precisely
+      # the failure this project exists to catch, so it fails the build.
+      - name: Fixtures match engine output
+        working-directory: services/drift-engine
+        run: |
+          go run ./cmd/seed -format=fixtures > /tmp/fixtures.json
+          if ! diff -q /tmp/fixtures.json ../../packages/fixtures/src/fixtures.json > /dev/null; then
+            echo "::error::packages/fixtures is stale. Run: pnpm --filter @drift/fixtures generate"
+            diff -u ../../packages/fixtures/src/fixtures.json /tmp/fixtures.json | head -40
+            exit 1
+          fi
+
+      - name: Seed dataset is valid NDJSON
+        working-directory: services/drift-engine
+        run: go run ./cmd/seed | while read -r line; do echo "$line" | python3 -m json.tool > /dev/null; done
+
+  web:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.17.0'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck every workspace
+        run: pnpm -r typecheck
+
+      - name: Workflow definition typechecks against the deployed engine
+        run: >
+          pnpm exec tsc --noEmit --strict --skipLibCheck
+          --module esnext --moduleResolution bundler --target es2022
+          sanity.workflow.ts
+
+      - name: Blueprint typechecks
+        run: >
+          pnpm exec tsc --noEmit --strict --skipLibCheck
+          --module esnext --moduleResolution bundler --target es2022 --types node
+          sanity/sanity.blueprint.ts
+
+      - name: Build console and site
+        run: pnpm -r build

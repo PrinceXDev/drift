@@ -1,0 +1,1661 @@
+/*
+ * DRIFT — Knowledge Control Room
+ *
+ * # The visual thesis
+ *
+ * This is an instrument, not a dashboard. The difference matters: a dashboard
+ * summarises for someone who is glancing, an instrument is read by someone
+ * whose job is to act on it. So: high density, no decorative chrome, numbers in
+ * tabular figures, identifiers in monospace, and every colour carrying meaning
+ * that is also written in words.
+ *
+ * Borrowed principles, not appearances:
+ *   - GitHub review     the before/after diff is the primary object
+ *   - Linear            keyboard-first density; nothing wasted
+ *   - Vercel            "this changed, here is exactly what"
+ *   - Stripe            evidence tables you can audit a claim against
+ *   - Incident consoles severity is structural, not a badge colour
+ *
+ * # Accessibility is load-bearing here
+ *
+ * Every state carries a text label as well as a colour. A control room where
+ * "fine" and "seven pages are wrong" differ only by hue fails for a colour-blind
+ * operator, fails in a greyscale screenshot, and fails in a compressed demo
+ * video. Severity is also encoded in a left border weight and a glyph.
+ */
+
+/* ---------------------------------------------------------------------------
+   Tokens
+   --------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces: four steps, no more. More depth than this reads as noise. */
+  --bg: #08090b;
+  --surface: #0e1013;
+  --raised: #14171b;
+  --hover: #1a1e23;
+
+  --line: #21252b;
+  --line-strong: #323840;
+  --line-bright: #4a525d;
+
+  --text: #e7e9ec;
+  --text-2: #98a1ad;
+  --text-3: #626b77;
+
+  /* Severity. Also expressed as borders and glyphs — never colour alone. */
+  --critical: #ff4d6a;
+  --critical-bg: #2a0e15;
+  --critical-line: #6b1f2e;
+
+  --major: #ff9f43;
+  --major-bg: #2a1c0c;
+  --major-line: #6b481c;
+
+  --minor: #5ab0ff;
+  --minor-bg: #0d1c2b;
+  --minor-line: #1e4468;
+
+  --ok: #2fd07f;
+  --ok-bg: #0c2419;
+  --ok-line: #1c5639;
+
+  --accent: #7c8cff;
+  --accent-bg: #141733;
+  --accent-line: #333c7a;
+
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+
+  --r-sm: 4px;
+  --r: 7px;
+  --r-lg: 11px;
+
+  --rail: 58px;
+  --status: 46px;
+}
+
+/* A light theme exists because control rooms are also read in daylight on a
+   laptop in a meeting, and forcing dark there is a choice made for aesthetics
+   rather than for the reader. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --raised: #ffffff;
+    --hover: #f0f2f5;
+    --line: #e3e6ea;
+    --line-strong: #cbd1d9;
+    --line-bright: #9aa3ae;
+    --text: #12151a;
+    --text-2: #545d69;
+    --text-3: #838c98;
+    --critical: #cf1d3d;
+    --critical-bg: #fdeff2;
+    --critical-line: #f2b8c4;
+    --major: #b76200;
+    --major-bg: #fdf4e8;
+    --major-line: #f0cfa0;
+    --minor: #1a6fb8;
+    --minor-bg: #eaf3fb;
+    --minor-line: #b6d4ec;
+    --ok: #12804f;
+    --ok-bg: #eaf6f0;
+    --ok-line: #aedcc4;
+    --accent: #4453d6;
+    --accent-bg: #eef0fd;
+    --accent-line: #c2c8f5;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Focus is never removed, only made legible. Keyboard operators are the point. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ---------------------------------------------------------------------------
+   Shell
+   --------------------------------------------------------------------------- */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--rail) 1fr;
+  grid-template-rows: var(--status) 1fr;
+  grid-template-areas:
+    'brand status'
+    'rail  main';
+  height: 100%;
+}
+
+.brand {
+  grid-area: brand;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------------------
+   Status bar — the instrument panel
+   --------------------------------------------------------------------------- */
+
+.statusbar {
+  grid-area: status;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  min-width: 0;
+}
+
+/* Metrics scroll when the window is narrow. Identity does not — who you are
+   signed in as determines what every control on screen will do, so it must
+   never be the thing that disappears first. */
+.statusbar-metrics {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.statusbar-metrics::-webkit-scrollbar {
+  display: none;
+}
+
+.statusbar-identity {
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  border-left: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px;
+  height: 100%;
+  border-right: 1px solid var(--line);
+  white-space: nowrap;
+  flex: none;
+}
+
+.stat-k {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.stat-v {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  margin-top: 1px;
+}
+
+.stat-v.big {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.stat-v.crit {
+  color: var(--critical);
+}
+.stat-v.ok {
+  color: var(--ok);
+}
+
+.statusbar .spacer {
+  flex: 1;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Nav rail
+   --------------------------------------------------------------------------- */
+
+.rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  flex: none;
+  transition: color 120ms, background 120ms;
+}
+
+.rail-btn:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.rail-btn[aria-current='true'] {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent-line);
+}
+
+.rail-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Count badge. Text, not just a dot — "3" is actionable, a dot is not. */
+.rail-count {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--critical);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  font-family: var(--mono);
+}
+
+.rail-count.quiet {
+  background: var(--line-bright);
+  color: var(--bg);
+}
+
+/* A tooltip that names the panel, because icon-only navigation is a puzzle. */
+.rail-btn::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--raised);
+  color: var(--text);
+  font-size: 11.5px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 100ms;
+  z-index: 40;
+}
+
+.rail-btn:hover::after,
+.rail-btn:focus-visible::after {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Main
+   --------------------------------------------------------------------------- */
+
+.main {
+  grid-area: main;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  flex: none;
+}
+
+.panel-head h1 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.panel-head .sub {
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 60px;
+  min-height: 0;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Banners
+   --------------------------------------------------------------------------- */
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 13px;
+  border: 1px solid var(--line-strong);
+  border-left-width: 3px;
+  border-radius: var(--r);
+  background: var(--raised);
+  margin-bottom: 14px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.banner.info {
+  border-left-color: var(--accent);
+  background: var(--accent-bg);
+}
+.banner.warn {
+  border-left-color: var(--major);
+  background: var(--major-bg);
+}
+.banner.crit {
+  border-left-color: var(--critical);
+  background: var(--critical-bg);
+}
+
+.banner strong {
+  color: var(--text);
+}
+
+.banner code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 6%);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .banner code {
+    background: rgb(0 0 0 / 5%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cards
+   --------------------------------------------------------------------------- */
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.card + .card {
+  margin-top: 12px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--line);
+  background: var(--raised);
+}
+
+.card-head h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-2);
+  font-weight: 650;
+  margin: 0;
+}
+
+.card-body {
+  padding: 13px;
+}
+
+.card-body.flush {
+  padding: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Feed
+   --------------------------------------------------------------------------- */
+
+.feed {
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-row {
+  display: grid;
+  grid-template-columns: 22px minmax(120px, 190px) minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 11px 13px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 100ms;
+}
+
+.feed-row:hover {
+  background: var(--hover);
+}
+
+.feed-row[aria-current='true'] {
+  background: var(--accent-bg);
+  border-left-color: var(--accent);
+}
+
+.feed-row.sev-critical {
+  border-left-color: var(--critical);
+}
+.feed-row.sev-major {
+  border-left-color: var(--major);
+}
+.feed-row.sev-minor {
+  border-left-color: var(--minor);
+}
+.feed-row.sev-info {
+  border-left-color: var(--line-strong);
+}
+
+.feed-row[aria-current='true'].sev-critical {
+  border-left-color: var(--critical);
+}
+
+/* The severity glyph. A shape, so it survives greyscale. */
+.sev-glyph {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: var(--mono);
+  border: 1.5px solid currentColor;
+}
+
+.sev-glyph.critical {
+  color: var(--critical);
+  background: var(--critical-bg);
+}
+.sev-glyph.major {
+  color: var(--major);
+  background: var(--major-bg);
+}
+.sev-glyph.minor {
+  color: var(--minor);
+  background: var(--minor-bg);
+}
+.sev-glyph.info {
+  color: var(--text-3);
+}
+
+.claim-path {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-2);
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.delta {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.delta .was {
+  color: var(--text-3);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.delta .now {
+  color: var(--critical);
+  font-weight: 650;
+}
+
+.delta .arrow {
+  color: var(--text-3);
+}
+
+.row-prose {
+  color: var(--text-2);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Chips
+   --------------------------------------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1.5px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  font-size: 10.5px;
+  font-weight: 550;
+  color: var(--text-2);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.chip.critical {
+  color: var(--critical);
+  background: var(--critical-bg);
+  border-color: var(--critical-line);
+}
+.chip.major {
+  color: var(--major);
+  background: var(--major-bg);
+  border-color: var(--major-line);
+}
+.chip.minor {
+  color: var(--minor);
+  background: var(--minor-bg);
+  border-color: var(--minor-line);
+}
+.chip.ok {
+  color: var(--ok);
+  background: var(--ok-bg);
+  border-color: var(--ok-line);
+}
+.chip.accent {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent-line);
+}
+
+.chip .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.chip.mono {
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+/* ---------------------------------------------------------------------------
+   Evidence tables
+   --------------------------------------------------------------------------- */
+
+.evidence {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.evidence-row {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+}
+
+.evidence-row:last-child {
+  border-bottom: 0;
+}
+
+.evidence-k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.evidence-v {
+  font-family: var(--mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.evidence-v.prose {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+/* ---------------------------------------------------------------------------
+   Diff
+   --------------------------------------------------------------------------- */
+
+.diff {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.diff-line {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.diff-line:last-child {
+  border-bottom: 0;
+}
+
+.diff-line.removed {
+  background: var(--critical-bg);
+  color: var(--critical);
+}
+
+.diff-line.added {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.diff-mark {
+  color: currentColor;
+  opacity: 0.7;
+  user-select: none;
+  font-weight: 700;
+}
+
+.diff-text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Gate checklist
+   --------------------------------------------------------------------------- */
+
+.gate {
+  display: flex;
+  flex-direction: column;
+}
+
+.gate-item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+
+.gate-item:last-child {
+  border-bottom: 0;
+}
+
+.gate-mark {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  border: 1.5px solid currentColor;
+  margin-top: 1px;
+}
+
+.gate-mark.pass {
+  color: var(--ok);
+  background: var(--ok-bg);
+}
+.gate-mark.block {
+  color: var(--critical);
+  background: var(--critical-bg);
+}
+.gate-mark.warn {
+  color: var(--major);
+  background: var(--major-bg);
+}
+
+.gate-label {
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+.gate-detail {
+  font-size: 11.5px;
+  color: var(--text-2);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.gate-id {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+
+/* The verdict strip at the bottom of the gate. */
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.verdict.allow {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.verdict.block {
+  background: var(--critical-bg);
+  color: var(--critical);
+}
+
+/* ---------------------------------------------------------------------------
+   Causal graph
+   --------------------------------------------------------------------------- */
+
+.graph-wrap {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: auto;
+}
+
+.graph-legend {
+  display: flex;
+  gap: 16px;
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--line);
+  background: var(--raised);
+  font-size: 11px;
+  color: var(--text-2);
+  flex-wrap: wrap;
+}
+
+.graph-legend b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.graph svg {
+  display: block;
+}
+
+.node-box {
+  fill: var(--raised);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  rx: 6;
+}
+
+.node-box.core {
+  stroke: var(--critical);
+}
+
+.node-box.stale {
+  fill: var(--critical-bg);
+  stroke: var(--critical);
+}
+
+.node-box.verified {
+  stroke: var(--ok-line);
+}
+
+.node-box.focus {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.node-title {
+  fill: var(--text);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.node-sub {
+  fill: var(--text-3);
+  font-size: 9.5px;
+}
+
+.node-val {
+  fill: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.2;
+}
+
+.edge.hot {
+  stroke: var(--critical);
+  stroke-width: 1.8;
+}
+
+.edge.cool {
+  stroke: var(--ok-line);
+}
+
+.col-label {
+  fill: var(--text-3);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* Propagation: edges draw themselves outward from the changed claim, so cause
+   and consequence read as one motion rather than an instant state change. */
+.edge.animate {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: draw 520ms ease-out forwards;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.node-enter {
+  animation: nodeIn 340ms ease-out both;
+}
+
+@keyframes nodeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge.animate,
+  .node-enter {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Objectives (content reliability)
+   --------------------------------------------------------------------------- */
+
+.objectives {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 11px;
+}
+
+.objective {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 11px 13px;
+  background: var(--surface);
+}
+
+.objective-label {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.objective-value {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.15;
+  margin-top: 3px;
+}
+
+.objective-value.met {
+  color: var(--ok);
+}
+.objective-value.missed {
+  color: var(--critical);
+}
+
+.meter {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  margin-top: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 500ms ease-out;
+}
+
+.meter-fill.met {
+  background: var(--ok);
+}
+.meter-fill.missed {
+  background: var(--critical);
+}
+
+/* The target line, so the number has something to be measured against. */
+.meter-target {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 1.5px;
+  background: var(--text-2);
+}
+
+.objective-basis {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+/* ---------------------------------------------------------------------------
+   Conflict room
+   --------------------------------------------------------------------------- */
+
+.sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 11px;
+}
+
+.side {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px;
+  background: var(--raised);
+  position: relative;
+}
+
+.side.wins {
+  border-color: var(--ok-line);
+  background: var(--ok-bg);
+}
+
+.side-value {
+  font-family: var(--mono);
+  font-size: 21px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.side-quote {
+  color: var(--text-2);
+  font-size: 12px;
+  margin: 5px 0 8px;
+}
+
+.side-source {
+  font-size: 11.5px;
+}
+
+.authority {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.instruction-preview {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-bg);
+  padding: 9px 11px;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  margin: 10px 0;
+  line-height: 1.55;
+}
+
+/* ---------------------------------------------------------------------------
+   Claim lineage
+
+   Six branches, laid out as labelled rows rather than as an actual tree.
+
+   The ASCII sketch this panel came from reads beautifully in a terminal and
+   badly in a browser: connectors cost horizontal room the content needs, and
+   there is no nesting for them to express — the branches are siblings. A left
+   rule and a fixed-width label give the same "these all hang off one thing"
+   reading and leave the space for the evidence.
+   --------------------------------------------------------------------------- */
+
+/* The claim picker: its own scroll region, so choosing a claim does not mean
+   scrolling past the lineage you are reading to reach the list. */
+.lineage-picker {
+  position: sticky;
+  top: 0;
+}
+
+.lineage-picker .card-body {
+  max-height: calc(100vh - var(--status) - 150px);
+  overflow-y: auto;
+}
+
+/* Below the split breakpoint the picker sits *under* the lineage rather than
+   beside it, so pinning it and giving it its own scrollbar would nest one
+   scroll region inside another for no benefit. Let it flow. */
+@media (max-width: 1100px) {
+  .lineage-picker {
+    position: static;
+  }
+
+  .lineage-picker .card-body {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+.claim-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Stacked, not columnar — a path and a sentence do not share a row well. */
+.claim-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 13px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 100ms;
+}
+
+.claim-row:last-child {
+  border-bottom: 0;
+}
+
+.claim-row:hover {
+  background: var(--hover);
+}
+
+.claim-row.moved {
+  border-left-color: var(--major);
+}
+
+.claim-row[aria-current='true'] {
+  background: var(--accent-bg);
+  border-left-color: var(--accent);
+}
+
+.claim-row[aria-current='true'].moved {
+  border-left-color: var(--major);
+}
+
+.claim-row-statement {
+  color: var(--text-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+  /* Two lines, then ellipsis. The full statement is one click away in the
+     detail beside it, so a picker row that grows to six lines buys nothing
+     and costs the list its scannability. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.claim-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lineage-claim {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.lineage-statement {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.lineage {
+  display: flex;
+  flex-direction: column;
+}
+
+.lineage-branch {
+  padding: 12px 16px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lineage-branch.last {
+  border-bottom: 0;
+}
+
+.lineage-branch-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.lineage-branch-label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  min-width: 74px;
+}
+
+.lineage-branch-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0 7px;
+  line-height: 17px;
+}
+
+.lineage-branch-hint {
+  flex: 1;
+  min-width: 220px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-3);
+}
+
+/* The rule is the "branch": everything in a body hangs off one claim. */
+.lineage-branch-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line-strong);
+  margin-left: 4px;
+}
+
+.lineage-item {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.lineage-item-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  color: var(--text);
+  font-weight: 550;
+}
+
+.lineage-item-sub {
+  color: var(--text-2);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+/* A published sentence, quoted so it is unmistakably content rather than UI. */
+.lineage-quote {
+  margin-top: 5px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--line-bright);
+  background: var(--raised);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* The sentence that explains why some dependents have no queue item. */
+.lineage-note {
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .lineage-branch-label {
+    min-width: 0;
+  }
+  .lineage-branch-hint {
+    min-width: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Timeline (audit / lineage)
+   --------------------------------------------------------------------------- */
+
+.timeline {
+  position: relative;
+  padding-left: 22px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--line-strong);
+}
+
+.tl-item {
+  position: relative;
+  padding: 0 0 15px;
+}
+
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line-bright);
+}
+
+.tl-item.crit::before {
+  border-color: var(--critical);
+}
+.tl-item.ok::before {
+  border-color: var(--ok);
+}
+.tl-item.accent::before {
+  border-color: var(--accent);
+}
+
+.tl-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tl-type {
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.tl-meta {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.tl-evidence {
+  margin-top: 5px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 7px 9px;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------------------
+   Time travel
+   --------------------------------------------------------------------------- */
+
+.timetravel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r);
+  background: var(--accent-bg);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.scrubber {
+  flex: 1;
+  min-width: 180px;
+  accent-color: var(--accent);
+}
+
+/* When viewing history, the whole surface says so. A control room showing a
+   past state without announcing it is how someone acts on stale information. */
+.shell[data-historical='true'] .main {
+  box-shadow: inset 0 0 0 2px var(--major-line);
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons
+   --------------------------------------------------------------------------- */
+
+.btn {
+  font: inherit;
+  font-weight: 550;
+  font-size: 12.5px;
+  padding: 7px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--raised);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 100ms, border-color 100ms;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: var(--line-bright);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn.primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.btn.danger {
+  color: var(--critical);
+  border-color: var(--critical-line);
+  background: var(--critical-bg);
+}
+
+.btn.ghost {
+  background: none;
+  border-color: transparent;
+  color: var(--text-2);
+  padding: 5px 9px;
+}
+
+.btn.ghost:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ---------------------------------------------------------------------------
+   Forms
+   --------------------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+input[type='text'],
+input[type='password'],
+textarea,
+select {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 7px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+}
+
+textarea {
+  font-family: var(--mono);
+  font-size: 12px;
+  resize: vertical;
+  min-height: 70px;
+}
+
+/* ---------------------------------------------------------------------------
+   Utility
+   --------------------------------------------------------------------------- */
+
+.empty {
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r);
+  padding: 30px 20px;
+  text-align: center;
+  color: var(--text-2);
+}
+
+.empty strong {
+  display: block;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-size: 13.5px;
+}
+
+.muted {
+  color: var(--text-2);
+}
+.faint {
+  color: var(--text-3);
+}
+.mono {
+  font-family: var(--mono);
+}
+.nowrap {
+  white-space: nowrap;
+}
+
+.note {
+  font-size: 11.5px;
+  color: var(--text-3);
+  line-height: 1.55;
+  margin-top: 9px;
+}
+
+.section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-3);
+  font-weight: 650;
+  margin: 0 0 8px;
+}
+
+hr.rule {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 14px 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Narrow screens
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: var(--status) 1fr auto;
+    grid-template-areas:
+      'status'
+      'main'
+      'rail';
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .rail {
+    flex-direction: row;
+    justify-content: space-around;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    padding: 4px;
+  }
+
+  .rail-btn::after {
+    display: none;
+  }
+
+  .feed-row {
+    grid-template-columns: 22px minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .feed-row .row-meta {
+    grid-column: 2;
+    flex-wrap: wrap;
+  }
+
+  .feed-row .claim-path {
+    grid-column: 2;
+  }
+}

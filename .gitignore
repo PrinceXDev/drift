@@ -1,0 +1,34 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# go
+services/drift-engine/bin/
+services/drift-engine/drift-engine
+services/drift-engine/*.exe
+
+# env — never commit
+.env
+.env.local
+.env.*.local
+
+# sanity
+.sanity/
+
+# editor / os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# logs
+*.log
+npm-debug.log*
